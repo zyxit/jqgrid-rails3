@@ -1,5 +1,5 @@
 require 'rubygems'
-require 'spec'
+require 'rspec'
 require 'active_support'
 require 'action_view' # ugly but temporary
 
@@ -190,7 +190,7 @@ describe "jqgrid helper method" do
     end
     
     it "should be able to enable data manipulation" do
-      @grid = jqgrid_shortcut(:add => true, :edit => true, :delete => true, :edit_url => "/users/post_data", :error_handler => "afterSubmit")
+      @grid = jqgrid_shortcut(:add => true, :edit => 'true', :delete => true, :edit_url => "/users/post_data", :error_handler => "afterSubmit")
       @grid.include?("edit:true").should be_true
       @grid.include?("add:true").should be_true
       @grid.include?("del:true").should be_true
@@ -201,7 +201,7 @@ describe "jqgrid helper method" do
     end
     
     it "should be possible to configure inline editing" do
-      @grid = jqgrid_shortcut(:edit => true, :inline_edit => true)
+      @grid = jqgrid_shortcut(:edit => 'true', :inline_edit => 'true')
       @grid.include?(%Q(jQuery('#users').editRow)).should be_true
       @grid.include?(%Q(jQuery('#users').restoreRow)).should be_true
     end
@@ -267,9 +267,10 @@ describe "jqgrid helper method" do
     		{ :field => "email", :label => "Email", :editable => true, :formoptions => { :rowpos => 3 }, :editoptions => { :size => 22 } },
     		{ :field => "role", :label => "Role", :editable => true, :stype => "select", :edittype => "select", :formoptions => { :rowpos => 2 }, :editoptions => { :value => [["admin","admin"], ["player", "player"], ["defender","defender"]], :size => 22 } }
     	],
-    	{ :add => true, :edit => true, :inline_edit => true, :delete => true, :edit_url => "/users/post_data" }
+    	{ :add => true, :edit => 'true', :inline_edit => 'true', :delete => true, :edit_url => "/users/post_data" }
     )
-    @grid.include?(%Q(olModel:[{name:'id', index:'id',width:35,resizable:false},{name:'pseudo', index:'pseudo',editoptions:{size:18},editable:true,editrules:{required:true},formoptions:{rowpos:1,elmprefix:\"(*)&nbsp;&nbsp;\"}},{name:'firstname', index:'firstname',editoptions:{size:22},editable:true,formoptions:{rowpos:4,label:\"A label\"}},{name:'lastname', index:'lastname',editoptions:{size:22},editable:true,formoptions:{rowpos:5}},{name:'email', index:'email',editoptions:{size:22},editable:true,formoptions:{rowpos:3}},{name:'role', index:'role',editoptions:{value:\"admin:admin;player:player;defender:defender\",size:22},editable:true,formoptions:{rowpos:2},stype:'select',edittype:'select'}])).should be_true
+    #@grid.include?(%Q(olModel:[{name:'id', index:'id',width:35,resizable:false},{name:'pseudo', index:'pseudo',editoptions:{size:18},editable:true,editrules:{required:true},formoptions:{rowpos:1,elmprefix:\"(*)&nbsp;&nbsp;\"}},{name:'firstname', index:'firstname',editoptions:{size:22},editable:true,formoptions:{rowpos:4,label:\"A label\"}},{name:'lastname', index:'lastname',editoptions:{size:22},editable:true,formoptions:{rowpos:5}},{name:'email', index:'email',editoptions:{size:22},editable:true,formoptions:{rowpos:3}},{name:'role', index:'role',editoptions:{value:\"admin:admin;player:player;defender:defender\",size:22},editable:true,formoptions:{rowpos:2},stype:'select',edittype:'select'}])).should be_true
+    @grid.include?(%Q(colModel:[{name:'id', index:'id',width:35,resizable:false},{name:'pseudo', index:'pseudo',editable:true,formoptions:{rowpos:1,elmprefix:"(*)&nbsp;&nbsp;"},editoptions:{size:18},editrules:{required:true}},{name:'firstname', index:'firstname',editable:true,formoptions:{rowpos:4,label:"A label"},editoptions:{size:22}},{name:'lastname', index:'lastname',editable:true,formoptions:{rowpos:5},editoptions:{size:22}},{name:'email', index:'email',editable:true,formoptions:{rowpos:3},editoptions:{size:22}},{name:'role', index:'role',editable:true,stype:'select',edittype:'select',formoptions:{rowpos:2},editoptions:{value:"admin:admin;player:player;defender:defender",size:22}}])).should be_true
   end
   
 end
