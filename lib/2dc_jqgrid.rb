@@ -23,7 +23,7 @@ module Jqgrid
           :rows_per_page       => '10',
           :sort_column         => '',
           :sort_order          => '',
-          :height              => '100%',
+          :height              => '240',
           :gridview            => 'false',
           :error_handler       => 'null',
           :inline_edit_handler => 'null',

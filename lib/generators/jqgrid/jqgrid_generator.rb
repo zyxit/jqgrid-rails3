@@ -7,9 +7,7 @@ class JqgridGenerator < Rails::Generators::NamedBase
 
   def create_controller_files
     template 'controller.rb', File.join('app/controllers', class_path, "#{plural_name}_controller.rb")  
-
-    puts columns.collect { |x| ":" + x + " => params[:" + x + "],"}.join.chomp(",")
-
+    template 'index.html.erb', File.join('app/views', file_path.pluralize, "index.html.erb")  
   end
 
   def model_name
