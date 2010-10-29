@@ -398,3 +398,13 @@ module JqgridJson
     value.nil? ? nested_elem : value
   end
 end
+
+module JqgridFilter
+  def filter_by_conditions(columns)
+    conditions = ""
+    columns.each do |column|
+      conditions << "#{column} LIKE '%#{params[column]}%' AND " unless params[column].nil?
+    end
+    conditions.chomp("AND ")
+  end
+end
