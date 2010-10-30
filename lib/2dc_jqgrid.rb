@@ -31,6 +31,7 @@ module Jqgrid
           :delete              => 'false',
           :search              => 'true',
           :edit                => 'false',          
+          :view                => 'false',          
           :inline_edit         => 'false',
           :autowidth           => 'false',
           :rownumbers          => 'false'                    
@@ -269,7 +270,7 @@ module Jqgrid
               caption: "#{title}"
             })
             .navGrid('##{id}_pager',
-              {edit:#{edit_button},add:#{options[:add]},del:#{options[:delete]},search:false,refresh:true},
+              {edit:#{edit_button},add:#{options[:add]},del:#{options[:delete]},view:#{options[:view]},search:false,refresh:true},
               {afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'edit');}},
               {afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'add');}},
               {afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'delete');}}
