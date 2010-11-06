@@ -34,7 +34,7 @@ class <%= class_name.pluralize %>Controller < ApplicationController
     rows_per_page = params[:rows] ? params[:rows].to_i : 10
 
     conditions={:page => current_page, :per_page => rows_per_page}
-    conditions[:order] = params["sidx"] + " " + params["sord"] if (params[:sidx] && params[:sord])
+    conditions[:order] = params["sidx"] + " " + params["sord"] unless (params[:sidx].blank? || params[:sord].blank?)
     
     if params[:_search] == "true"
       conditions[:conditions]=filter_by_conditions(index_columns)

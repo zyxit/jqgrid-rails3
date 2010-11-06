@@ -57,13 +57,17 @@ module Jqgrid
         filter_toolbar = "mygrid.filterToolbar();"
         filter_toolbar << "mygrid[0].toggleToolbar()"
       end
-
+     
+      # Enable sortableRows
+      sortableRows=""
+      
+      
       # Enable multi-selection (checkboxes)
       multiselect = "multiselect: false,"
       if options[:multi_selection]
         multiselect = "multiselect: true,"
         multihandler = %Q/
-          jQuery("##{id}_select_button").click( function() { 
+          jQuery("##{id}_select_button").click(function() { 
             var s; s = jQuery("##{id}").getGridParam('selarrrow'); 
             #{options[:selection_handler]}(s); 
             return false;
@@ -252,10 +256,10 @@ module Jqgrid
               rowNum:#{options[:rows_per_page]},
               rowList:[10,25,50,100],
               imgpath: '/images/jqgrid',
-              sortname: '#{options[:sort_column]}',
               viewrecords: true,
               height: #{options[:height]},
-              sortorder: '#{options[:sort_order]}',
+              #{"sortname: '#{options[:sort_column]}'," unless options[:sort_column].blank?}
+              #{"sortorder: '#{options[:sort_order]}'," unless options[:sort_order].blank?}
               gridview: #{options[:gridview]},
               scrollrows: true,
               autowidth: #{options[:autowidth]},
@@ -271,9 +275,9 @@ module Jqgrid
             })
             .navGrid('##{id}_pager',
               {edit:#{edit_button},add:#{options[:add]},del:#{options[:delete]},view:#{options[:view]},search:false,refresh:true},
-              {afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'edit');}},
+              {closeAfterEdit:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'edit');}},
               {afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'add');}},
-              {afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'delete');}}
+              {closeAfterEdit:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'delete');}}
             )
             #{search}
             #{multihandler}
