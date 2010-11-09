@@ -10,24 +10,45 @@ class <%= class_name.pluralize %>Controller < ApplicationController
   #     post "post_data"
   #   end
   # end
-  #
+
   def post_data
-    if params[:oper] == "del"
-      <%= camel %>.find(params[:id]).destroy
-    else
-      <%= model_name %>_params = { <%= columns.collect { |x| ":" + x + " => params[:" + x + "],"}.join.chomp(",") %> }
-      if params[:id] == "_empty"
+    message=""
+    <%= model_name %>_params = { <%= columns.collect { |x| ":" + x + " => params[:" + x + "],"}.join.chomp(",") %> }
+    case params[:oper]
+    when 'add'
+      if params["id"] == "_empty"
         <%= model_name %> = <%= camel %>.create(<%= model_name %>_params)
-      else
-        <%= model_name %> = <%= camel %>.find(params[:id])
-        <%= model_name %>.update_attributes(<%= model_name %>_params)
+        message << ('add ok') if <%= model_name %>.errors.empty?
       end
+      
+    when 'edit'
+      <%= model_name %> = <%= camel %>.find(params[:id])
+      message << ('update ok') if <%= model_name %>.update_attributes(<%= model_name %>_params)
+    when 'del'
+      <%= camel %>.destroy_all(:id => params[:id].split(","))
+      message <<  ('del ok')
+    when 'sort'
+      <%=plural_name%> = <%= camel %>.all
+      <%=plural_name%>.each do |<%= model_name %>|
+        <%= model_name %>.position = params['ids'].index(<%= model_name %>.id.to_s) + 1 if params['ids'].index(<%= model_name %>.id.to_s) 
+        <%= model_name %>.save
+      end
+      message << "sort ak"
+    else
+      message <<  ('unknown action')
     end
     
-    render :nothing => true
+    unless (<%= model_name %> && <%= model_name %>.errors).blank?  
+      <%= model_name %>.errors.entries.each do |error|
+        message << "<strong>#{<%= camel %>.human_attribute_name(error[0])}</strong> : #{error[1]}<br/>"
+      end
+      render :json =>[false,message]
+    else
+      render :json => [true,message] 
+    end
   end
-
-
+  
+  
   def index
     index_columns ||= [<%= columns.collect { |x| ":" + x + "," }.join.chomp(',') %>]
     current_page = params[:page] ? params[:page].to_i : 1
@@ -47,15 +68,5 @@ class <%= class_name.pluralize %>Controller < ApplicationController
       format.json { render :json => @<%= plural_name %>.to_jqgrid_json(index_columns, current_page, rows_per_page, total_entries)}  
     end
   end
-  
-  # private 
-  # 
-  # def filter_by_conditions(columns)
-  #   conditions = ""
-  #   columns.each do |column|
-  #     conditions << "#{column} LIKE '%#{params[column]}%' AND " unless params[column].nil?
-  #   end
-  #   conditions.chomp("AND ")
-  # end
 
 end

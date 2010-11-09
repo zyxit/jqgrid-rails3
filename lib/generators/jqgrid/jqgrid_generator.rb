@@ -18,4 +18,5 @@ class JqgridGenerator < Rails::Generators::NamedBase
     file_name.camelcase
   end
 
+
 end

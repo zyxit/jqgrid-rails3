@@ -11,7 +11,7 @@ module Jqgrid
       js << javascript_include_tag("jqgrid/i18n/grid.locale-#{locale}.js") + "\n"
       js << javascript_include_tag('jqgrid/jquery.jqGrid.min.js') + "\n"
       # Don't know if we need it, if smth not working, just uncomment it
-      # js << javascript_include_tag('jqgrid/jquery.tablednd.js') + "\n"
+       #js << javascript_include_tag('jqgrid/grid.tbltogrid') + "\n"
       # js << javascript_include_tag('jqgrid/jquery.contextmenu.js') + "\n"
     end
 
@@ -34,7 +34,7 @@ module Jqgrid
           :view                => 'false',          
           :inline_edit         => 'false',
           :autowidth           => 'false',
-          :rownumbers          => 'false'                    
+          :rownumbers          => 'false'                   
         }.merge(options)
       
       # Stringify options values
@@ -46,6 +46,25 @@ module Jqgrid
       options[:error_handler_return_value] = (options[:error_handler] == 'null') ? 'true;' : options[:error_handler]
       edit_button = (options[:edit].to_s == 'true' && options[:inline_edit].to_s == 'false').to_s
 
+      
+      # Return error messgge 
+      error_handler=""
+      unless options[:error_handler]=="null"
+        error_handler=%Q/function #{options[:error_handler]}(r, data, action) {
+          var resText=JSON.parse(r.responseText);
+          if (resText[0]==true) {
+            $('#flash_alert').html("<span class='ui-icon ui-icon-info' style='float:left; margin-right:.3em;'><\/span>"+resText[1]);
+            $('#flash_alert').slideDown();
+            window.setTimeout(function() {
+              $('#flash_alert').slideUp();
+              }, 3000);
+              return [resText[0]]
+            }else{
+              return [resText[0],resText[1]]
+            }
+        }/
+      end
+      
       # Generate columns data
       col_names, col_model = gen_columns(columns)
 
@@ -244,6 +263,7 @@ module Jqgrid
       # Generate required Javascript & html to create the jqgrid
       %Q(
         <script type="text/javascript">
+          #{error_handler}
           var lastsel;
           #{'jQuery(document).ready(function(){' unless options[:omit_ready]=='true'}
           var mygrid = jQuery("##{id}").jqGrid({
@@ -271,7 +291,7 @@ module Jqgrid
               #{editable}
               #{subgrid_enabled}
               #{subgrid}
-              caption: "#{title}"
+              caption: "#{title}"             
             })
             .navGrid('##{id}_pager',
               {edit:#{edit_button},add:#{options[:add]},del:#{options[:delete]},view:#{options[:view]},search:false,refresh:true},
@@ -285,6 +305,7 @@ module Jqgrid
             #{filter_toolbar}
           #{'})' unless options[:omit_ready]=='true'};
         </script>
+        <div id="flash_alert" style="display:none;padding:0.7em;" class="ui-state-highlight ui-corner-all"></div>
         <table id="#{id}" class="scroll" cellpadding="0" cellspacing="0"></table>
         <div id="#{id}_pager" class="scroll" style="text-align:center;"></div>
       )
@@ -311,6 +332,7 @@ module Jqgrid
       column.except(:field, :label).each do |couple|
         if couple[0] == :editoptions
           options << "editoptions:#{get_sub_options(couple[1])},"
+        
         elsif couple[0] == :formoptions
           options << "formoptions:#{get_sub_options(couple[1])},"
         elsif couple[0] == :searchoptions
@@ -345,10 +367,10 @@ module Jqgrid
           end
           options.chop! << %Q/",/
         else # :size => 30, :rows => 5, :maxlength => 20, ...
-          if couple[1].instance_of?(Fixnum) || couple[1] == 'true' || couple[1] == 'false' || couple[1] == true || couple[1] == false
-            options << %Q/#{couple[0]}:#{couple[1]},/
-          else
-            options << %Q/#{couple[0]}:"#{couple[1]}",/            
+          if couple[1].instance_of?(Fixnum) || couple[1] == 'true' || couple[1] == 'false' || couple[1] == true || couple[1] == false || couple[1] =~ /function/
+              options << %Q/#{couple[0]}:#{couple[1]},/
+            else
+              options << %Q/#{couple[0]}:"#{couple[1]}",/          
           end
         end
       end
