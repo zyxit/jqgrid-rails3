@@ -406,15 +406,29 @@ module JqgridJson
   private
   
   def get_atr_value(elem, atr, couples)
-    if atr.to_s.include?('.')
+    if atr.instance_of?(String) && atr.to_s.include?('.')
       value = get_nested_atr_value(elem, atr.to_s.split('.').reverse) 
     else
       value = couples[atr]
-      value = elem.send(atr.to_sym) if value.blank? && elem.respond_to?(atr) # Required for virtual attributes
+      value = _resolve_value(atr, elem)
+     # value = elem.send(atr.to_sym) if value.blank? && elem.respond_to?(atr) # Required for virtual attributes
     end
     value
   end
-  
+  def _resolve_value(value, record)
+    case value
+    when Symbol
+      if record.respond_to?(value)
+        record.send(value) 
+      else 
+        value.to_s
+      end
+    when Proc
+      value.call(record)
+    else
+      value
+    end
+  end
   def get_nested_atr_value(elem, hierarchy)
     return nil if hierarchy.size == 0
     atr = hierarchy.pop
