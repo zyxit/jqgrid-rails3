@@ -34,7 +34,8 @@ module Jqgrid
           :view                => 'false',          
           :inline_edit         => 'false',
           :autowidth           => 'false',
-          :rownumbers          => 'false'                   
+          :rownumbers          => 'false',
+          :viewrecords         => 'true'
         }.merge(options)
       
       # Stringify options values
@@ -185,7 +186,8 @@ module Jqgrid
             :add           => 'false',
             :edit          => 'false',
             :delete        => 'false',
-            :search        => 'false'
+            :search        => 'false',
+            :viewrecords   => 'true'
           }.merge(options[:subgrid])
 
         # Stringify options values
@@ -237,7 +239,7 @@ module Jqgrid
         		   	imgpath: '/images/jqgrid',
         		   	sortname: '#{options[:subgrid][:sort_column]}',
         		    sortorder: '#{options[:subgrid][:sort_order]}',
-                viewrecords: true,
+                viewrecords: #{options[:subgrid][:viewrecords]},
                 toolbar : [true,"top"], 
         		    #{subgrid_inline_edit}
         		    #{subgrid_direct_link}
@@ -276,7 +278,7 @@ module Jqgrid
               rowNum:#{options[:rows_per_page]},
               rowList:[10,25,50,100],
               imgpath: '/images/jqgrid',
-              viewrecords: true,
+              viewrecords:#{options[:viewrecords]},
               height: #{options[:height]},
               #{"sortname: '#{options[:sort_column]}'," unless options[:sort_column].blank?}
               #{"sortorder: '#{options[:sort_order]}'," unless options[:sort_order].blank?}
