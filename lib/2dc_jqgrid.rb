@@ -334,7 +334,8 @@ module Jqgrid
       column.except(:field, :label).each do |couple|
         if couple[0] == :editoptions
           options << "editoptions:#{get_sub_options(couple[1])},"
-        
+        elsif couple[0] == :formatoptions
+          options << "formatoptions:#{get_sub_options(couple[1])},"        
         elsif couple[0] == :formoptions
           options << "formoptions:#{get_sub_options(couple[1])},"
         elsif couple[0] == :searchoptions
