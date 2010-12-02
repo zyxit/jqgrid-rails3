@@ -35,7 +35,11 @@ module Jqgrid
           :inline_edit         => 'false',
           :autowidth           => 'false',
           :rownumbers          => 'false',
-          :viewrecords         => 'true'
+          :viewrecords         => 'true',
+          :rowlist             => [10,25,50,100],
+          :pagerpos            => 'center',
+          :hiddengrid          => 'false',
+          :hidegrid            => 'false'
         }.merge(options)
       
       # Stringify options values
@@ -187,7 +191,8 @@ module Jqgrid
             :edit          => 'false',
             :delete        => 'false',
             :search        => 'false',
-            :viewrecords   => 'true'
+            :viewrecords   => 'true',
+            :rowlist       => [10,25,50,100]
           }.merge(options[:subgrid])
 
         # Stringify options values
@@ -240,6 +245,7 @@ module Jqgrid
         		   	sortname: '#{options[:subgrid][:sort_column]}',
         		    sortorder: '#{options[:subgrid][:sort_order]}',
                 viewrecords: #{options[:subgrid][:viewrecords]},
+                rowlist: #{options[:subgrid][:rowlist]},
                 toolbar : [true,"top"], 
         		    #{subgrid_inline_edit}
         		    #{subgrid_direct_link}
@@ -275,8 +281,9 @@ module Jqgrid
               colNames:#{col_names},
               colModel:#{col_model},
               pager: '##{id}_pager',
+              pagerpos:'#{options[:pagerpos]}', 
               rowNum:#{options[:rows_per_page]},
-              rowList:[10,25,50,100],
+              rowList:#{options[:rowlist]},
               imgpath: '/images/jqgrid',
               viewrecords:#{options[:viewrecords]},
               height: #{options[:height]},
@@ -286,6 +293,8 @@ module Jqgrid
               scrollrows: true,
               autowidth: #{options[:autowidth]},
               rownumbers: #{options[:rownumbers]},
+              hiddengrid: #{options[:hiddengrid]},
+              hidegrid: #{options[:hidegrid]},              
               #{multiselect}
               #{masterdetails}
               #{grid_loaded}
