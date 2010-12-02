@@ -1,6 +1,6 @@
 module Jqgrid
 
-    def jqgrid_stylesheets(theme="default")
+  def jqgrid_stylesheets(theme="default")
       css  = stylesheet_link_tag("jqgrid/themes/#{theme}/jquery-ui-1.8.custom.css") + "\n"
       css << stylesheet_link_tag('jqgrid/ui.jqgrid.css') + "\n"
     end
@@ -392,8 +392,14 @@ end
 
 
 module JqgridJson
-  include ActionView::Helpers::JavaScriptHelper
-
+  JSON_ESCAPE_MAP = {
+    '\\'    => '\\\\',
+    '</'    => '<\/',
+    "\r\n"  => '\n',
+    "\n"    => '\n',
+    "\r"    => '\n',
+    '"'     => '\\"' }
+  
   def to_jqgrid_json(attributes, current_page, per_page, total)
     json = %Q({"page":"#{current_page}","total":#{total/per_page.to_i+1},"records":"#{total}")
     if total > 0
@@ -404,7 +410,7 @@ module JqgridJson
         couples = elem.attributes.symbolize_keys
         attributes.each do |atr|
           value = get_atr_value(elem, atr, couples)
-          value = escape_javascript(value) if value and value.is_a? String
+          value = escape_json(value) if value and value.is_a? String
           json << %Q("#{value}",)
         end
         json.chop! << "]},"
@@ -416,7 +422,15 @@ module JqgridJson
   end
   
   private
-  
+    
+  def escape_json(json)
+    if json
+      json.gsub(/(\\|<\/|\r\n|[\n\r"])/) { JSON_ESCAPE_MAP[$1] }
+    else
+      ''
+    end
+  end
+
   def get_atr_value(elem, atr, couples)
     if atr.instance_of?(String) && atr.to_s.include?('.')
       value = get_nested_atr_value(elem, atr.to_s.split('.').reverse) 
