@@ -39,7 +39,9 @@ module Jqgrid
           :rowlist             => [10,25,50,100],
           :pagerpos            => 'center',
           :hiddengrid          => 'false',
-          :hidegrid            => 'false'
+          :hidegrid            => 'false',
+          :shrinkToFit         => 'true',
+          :form_width          => 300
         }.merge(options)
       
       # Stringify options values
@@ -192,7 +194,8 @@ module Jqgrid
             :delete        => 'false',
             :search        => 'false',
             :viewrecords   => 'true',
-            :rowlist       => [10,25,50,100]
+            :rowlist       => [10,25,50,100],
+            :shrinkToFit   => 'false'
           }.merge(options[:subgrid])
 
         # Stringify options values
@@ -246,6 +249,7 @@ module Jqgrid
         		    sortorder: '#{options[:subgrid][:sort_order]}',
                 viewrecords: #{options[:subgrid][:viewrecords]},
                 rowlist: #{options[:subgrid][:rowlist]},
+                shrinkToFit: #{options[:subgrid][:shrinkToFit]},
                 toolbar : [true,"top"], 
         		    #{subgrid_inline_edit}
         		    #{subgrid_direct_link}
@@ -294,7 +298,8 @@ module Jqgrid
               autowidth: #{options[:autowidth]},
               rownumbers: #{options[:rownumbers]},
               hiddengrid: #{options[:hiddengrid]},
-              hidegrid: #{options[:hidegrid]},              
+              hidegrid: #{options[:hidegrid]}, 
+              shrinkToFit: #{options[:shrinkToFit]}, 
               #{multiselect}
               #{masterdetails}
               #{grid_loaded}
@@ -306,8 +311,8 @@ module Jqgrid
             })
             .navGrid('##{id}_pager',
               {edit:#{edit_button},add:#{options[:add]},del:#{options[:delete]},view:#{options[:view]},search:false,refresh:true},
-              {closeAfterEdit:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'edit');}},
-              {closeAfterEdit:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'add');}},
+              {width:#{options[:form_width]},closeAfterEdit:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'edit');}},
+              {width:#{options[:form_width]},closeAfterAdd:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'add');}},
               {closeAfterEdit:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'delete');}}
             )
             #{search}
