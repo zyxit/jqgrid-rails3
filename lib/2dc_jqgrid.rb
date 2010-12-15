@@ -12,7 +12,7 @@ module Jqgrid
       js << javascript_include_tag('jqgrid/jquery.jqGrid.min.js') + "\n"
       # Don't know if we need it, if smth not working, just uncomment it
        #js << javascript_include_tag('jqgrid/grid.tbltogrid') + "\n"
-      # js << javascript_include_tag('jqgrid/jquery.contextmenu.js') + "\n"
+      js << javascript_include_tag('jqgrid/jquery.contextmenu.r2.packed.js') + "\n"
     end
 
     def jqgrid(title, id, action, columns = [], options = {})
@@ -41,12 +41,13 @@ module Jqgrid
           :hiddengrid          => 'false',
           :hidegrid            => 'false',
           :shrinkToFit         => 'true',
-          :form_width          => 300
+          :form_width          => 300,
+          :context_menu        => {:menu_handler => nil, :menu_bindings => nil, :menu_id => nil}
         }.merge(options)
       
       # Stringify options values
       options.inject({}) do |options, (key, value)|
-        options[key] = (key != :subgrid) ? value.to_s : value
+        options[key] = (key != :subgrid && key != :context_menu) ? value.to_s : value
         options
       end
       
@@ -175,6 +176,19 @@ module Jqgrid
           } 
         },/
       end
+      
+      # Context menu
+      # See http://www.trendskitchens.co.nz/jquery/contextmenu/
+      # http://www.hard-bit.net/files/jqGrid-3.5/ContextMenu.html
+      # http://www.hard-bit.net/blog/?p=171
+      #
+      context_menu = ""
+      if options[:context_menu].size > 0 && !options[:context_menu][:menu_handler].blank?
+        context_menu = %Q/
+        onRightClickRow: function(rowid,irow,icol,e){
+          $('#' + rowid).contextMenu('#{options[:context_menu][:menu_id]}', #{options[:context_menu][:menu_bindings]});
+        },/
+      end           
       
       # Enable subgrids
       subgrid = ""
@@ -305,6 +319,7 @@ module Jqgrid
               #{grid_loaded}
               #{direct_link}
               #{editable}
+              #{context_menu}
               #{subgrid_enabled}
               #{subgrid}
               caption: "#{title}"             
