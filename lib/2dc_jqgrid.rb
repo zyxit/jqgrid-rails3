@@ -42,7 +42,7 @@ module Jqgrid
           :hidegrid            => 'false',
           :shrinkToFit         => 'true',
           :form_width          => 300,
-          :context_menu        => {:menu_handler => nil, :menu_bindings => nil, :menu_id => nil}
+          :context_menu        => {:menu_bindings => nil, :menu_id => nil}
         }.merge(options)
       
       # Stringify options values
@@ -183,7 +183,7 @@ module Jqgrid
       # http://www.hard-bit.net/blog/?p=171
       #
       context_menu = ""
-      if options[:context_menu].size > 0 && !options[:context_menu][:menu_handler].blank?
+      if options[:context_menu].size > 0 && !options[:context_menu][:menu_id].blank?
         context_menu = %Q/
         onRightClickRow: function(rowid,irow,icol,e){
           $('#' + rowid).contextMenu('#{options[:context_menu][:menu_id]}', #{options[:context_menu][:menu_bindings]});
