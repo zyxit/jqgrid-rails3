@@ -186,7 +186,7 @@ module Jqgrid
       if options[:context_menu].size > 0 && !options[:context_menu][:menu_id].blank?
         context_menu = %Q/
         afterInsertRow: function(rowid, rowdata, rowelem){
-          $(rowid).contextMenu('#{options[:context_menu][:menu_id]}', #{options[:context_menu][:menu_bindings]});
+          $('#' + rowid).contextMenu('#{options[:context_menu][:menu_id]}', #{options[:context_menu][:menu_bindings]});
         },/
       end           
       
