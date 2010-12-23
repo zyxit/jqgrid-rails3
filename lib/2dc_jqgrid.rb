@@ -36,12 +36,12 @@ module Jqgrid
           :autowidth           => 'false',
           :rownumbers          => 'false',
           :viewrecords         => 'true',
-          :rowlist             => [10,25,50,100],
+          :rowlist             => '[10,25,50,100]',
           :pagerpos            => 'center',
           :hiddengrid          => 'false',
           :hidegrid            => 'false',
           :shrinkToFit         => 'true',
-          :form_width          => 300,
+          :form_width          => '300',
           :context_menu        => {:menu_bindings => nil, :menu_id => nil}
         }.merge(options)
       
@@ -208,7 +208,7 @@ module Jqgrid
             :delete        => 'false',
             :search        => 'false',
             :viewrecords   => 'true',
-            :rowlist       => [10,25,50,100],
+            :rowlist       => '[10,25,50,100]',
             :shrinkToFit   => 'false'
           }.merge(options[:subgrid])
 
