@@ -25,8 +25,16 @@ module Jqgrid
           :sort_order          => '',
           :height              => '240',
           :gridview            => 'false',
-          :error_handler       => 'null',
-          :inline_edit_handler => 'null',
+          # If specified will create a handler using the specified
+          # string as the name of the error handler function. Default
+          # error handling code will be created for this function.
+          :error_handler       => 'null',  
+          # The other option is to pass in the name of a custom error handler
+          # created external to this plugin, to use this do not specify an
+          # :error_handler option and specify the name of the custom error 
+          # handler using this option.
+          :custom_error_handler=> 'null',
+          :inline_edit_handler => 'null',         
           :add                 => 'false',
           :delete              => 'false',
           :search              => 'true',
@@ -41,7 +49,7 @@ module Jqgrid
           :hiddengrid          => 'false',
           :hidegrid            => 'false',
           :shrinkToFit         => 'true',
-          :form_width          => '300',
+          :form_width          => 300,
           :context_menu        => {:menu_bindings => nil, :menu_id => nil}
         }.merge(options)
       
@@ -51,26 +59,37 @@ module Jqgrid
         options
       end
       
-      options[:error_handler_return_value] = (options[:error_handler] == 'null') ? 'true;' : options[:error_handler]
       edit_button = (options[:edit].to_s == 'true' && options[:inline_edit].to_s == 'false').to_s
-
       
-      # Return error messgge 
-      error_handler=""
-      unless options[:error_handler]=="null"
-        error_handler=%Q/function #{options[:error_handler]}(r, data, action) {
-          var resText=JSON.parse(r.responseText);
-          if (resText[0]==true) {
-            $('#flash_alert').html("<span class='ui-icon ui-icon-info' style='float:left; margin-right:.3em;'><\/span>"+resText[1]);
-            $('#flash_alert').slideDown();
-            window.setTimeout(function() {
-              $('#flash_alert').slideUp();
-              }, 3000);
-              return [resText[0]]
-            }else{
-              return [resText[0],resText[1]]
-            }
-        }/
+      # Setup error handler if required
+      error_handler_code = ''
+      error_handler_name = 'null'
+      if options[:error_handler] == 'null' && options[:custom_error_handler] == 'null'
+        # If no error handlers return true
+        options[:error_handler_return_value] = 'true'
+      else
+        if options[:error_handler] == "null"
+          # Setup custom handler
+          error_handler_name = options[:custom_error_handler]
+          options[:error_handler_return_value] = options[:custom_error_handler]
+        else
+          # Construct default error handler code
+          error_handler_name = options[:error_handler]    
+          options[:error_handler_return_value] = options[:error_handler]
+          error_handler_code = %Q/function #{options[:error_handler]}(r, data, action) {
+            var resText=JSON.parse(r.responseText);
+            if (resText[0]==true) {
+              $('#flash_alert').html("<span class='ui-icon ui-icon-info' style='float:left; margin-right:.3em;'><\/span>"+resText[1]);
+              $('#flash_alert').slideDown();
+              window.setTimeout(function() {
+                $('#flash_alert').slideUp();
+                }, 3000);
+                return [resText[0]]
+              }else{
+                return [resText[0],resText[1]]
+              }
+          }/
+        end        
       end
       
       # Generate columns data
@@ -171,7 +190,7 @@ module Jqgrid
         onSelectRow: function(id){ 
           if(id && id!==lastsel){ 
             jQuery('##{id}').restoreRow(lastsel);
-            jQuery('##{id}').editRow(id, true, #{options[:inline_edit_handler]}, #{options[:error_handler]});
+            jQuery('##{id}').editRow(id, true, #{options[:inline_edit_handler]}, #{error_handler_name});
             lastsel=id; 
           } 
         },/
@@ -289,7 +308,7 @@ module Jqgrid
       # Generate required Javascript & html to create the jqgrid
       %Q(
         <script type="text/javascript">
-          #{error_handler}
+          #{error_handler_code}
           var lastsel;
           #{'jQuery(document).ready(function(){' unless options[:omit_ready]=='true'}
           var mygrid = jQuery("##{id}").jqGrid({
