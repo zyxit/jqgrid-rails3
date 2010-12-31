@@ -11,7 +11,7 @@ module Jqgrid
       js << javascript_include_tag("jqgrid/i18n/grid.locale-#{locale}.js") + "\n"
       js << javascript_include_tag('jqgrid/jquery.jqGrid.min.js') + "\n"
       # Don't know if we need it, if smth not working, just uncomment it
-       #js << javascript_include_tag('jqgrid/grid.tbltogrid') + "\n"
+      #js << javascript_include_tag('jqgrid/grid.tbltogrid') + "\n"
       js << javascript_include_tag('jqgrid/jquery.contextmenu.r2.packed.js') + "\n"
     end
 
@@ -50,7 +50,9 @@ module Jqgrid
           :hidegrid            => 'false',
           :shrinkToFit         => 'true',
           :form_width          => 300,
-          :context_menu        => {:menu_bindings => nil, :menu_id => nil}
+          :context_menu        => {:menu_bindings => nil, :menu_id => nil},
+          # Recreate the edit/add dialogs by default do not cache
+          :recreateForm        => 'true'
         }.merge(options)
       
       # Stringify options values
@@ -346,9 +348,9 @@ module Jqgrid
             .navGrid('##{id}_pager',
               {edit:#{edit_button},add:#{options[:add]},del:#{options[:delete]},view:#{options[:view]},search:false,refresh:true},
               // Edit options
-              {closeOnEscape:true,modal:true,width:#{options[:form_width]},closeAfterEdit:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'edit');}},
+              {closeOnEscape:true,modal:true,recreateForm:#{options[:recreateForm]},width:#{options[:form_width]},closeAfterEdit:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'edit');}},
               // Add options
-              {closeOnEscape:true,modal:true,width:#{options[:form_width]},closeAfterAdd:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'add');}},
+              {closeOnEscape:true,modal:true,recreateForm:#{options[:recreateForm]},width:#{options[:form_width]},closeAfterAdd:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'add');}},
               // Delete options
               {closeOnEscape:true,modal:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'delete');}}
             )
