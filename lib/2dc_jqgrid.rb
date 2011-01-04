@@ -52,7 +52,7 @@ module Jqgrid
           :form_width          => 300,
           :context_menu        => {:menu_bindings => nil, :menu_id => nil},
           # Recreate the edit/add dialogs by default do not cache
-          :recreateForm        => 'true'
+          :recreateForm        => 'true;'
         }.merge(options)
       
       # Stringify options values
@@ -68,7 +68,7 @@ module Jqgrid
       error_handler_name = 'null'
       if options[:error_handler] == 'null' && options[:custom_error_handler] == 'null'
         # If no error handlers return true
-        options[:error_handler_return_value] = 'true'
+        options[:error_handler_return_value] = 'true;'
       else
         if options[:error_handler] == "null"
           # Setup custom handler
