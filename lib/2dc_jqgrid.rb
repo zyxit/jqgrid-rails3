@@ -52,7 +52,7 @@ module Jqgrid
           :form_width          => 300,
           :context_menu        => {:menu_bindings => nil, :menu_id => nil},
           # Recreate the edit/add dialogs by default do not cache
-          :recreateForm        => 'true;'
+          :recreateForm        => 'true'
         }.merge(options)
       
       # Stringify options values
