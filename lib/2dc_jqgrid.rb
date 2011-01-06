@@ -50,6 +50,7 @@ module Jqgrid
           :hidegrid            => 'false',
           :shrinkToFit         => 'true',
           :form_width          => 300,
+          :loadui              => 'enable',
           :context_menu        => {:menu_bindings => nil, :menu_id => nil},
           # Recreate the edit/add dialogs by default do not cache
           :recreateForm        => 'true'
@@ -331,6 +332,7 @@ module Jqgrid
               gridview: #{options[:gridview]},
               scrollrows: true,
               autowidth: #{options[:autowidth]},
+              loadui: '#{options[:loadui]}',
               rownumbers: #{options[:rownumbers]},
               hiddengrid: #{options[:hiddengrid]},
               hidegrid: #{options[:hidegrid]}, 
