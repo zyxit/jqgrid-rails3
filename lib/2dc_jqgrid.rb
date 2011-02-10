@@ -1,18 +1,20 @@
 module Jqgrid
 
   def jqgrid_stylesheets(theme="default")
-      css  = stylesheet_link_tag("jqgrid/themes/#{theme}/jquery-ui-1.8.custom.css") + "\n"
-      css << stylesheet_link_tag('jqgrid/ui.jqgrid.css') + "\n"
+      stylesheet_link_tag "jqgrid/themes/#{theme}/jquery-ui-1.8.custom.css", 
+        'jqgrid/ui.jqgrid.css', 
+        :cache => "jqgrid-#{theme}-css"
     end
 
     def jqgrid_javascripts
       locale = I18n.locale rescue :en
-      js = javascript_include_tag('jqgrid/jquery-ui-1.8.custom.min.js') + "\n"
-      js << javascript_include_tag("jqgrid/i18n/grid.locale-#{locale}.js") + "\n"
-      js << javascript_include_tag('jqgrid/jquery.jqGrid.min.js') + "\n"
-      # Don't know if we need it, if smth not working, just uncomment it
-      #js << javascript_include_tag('jqgrid/grid.tbltogrid') + "\n"
-      js << javascript_include_tag('jqgrid/jquery.contextmenu.r2.packed.js') + "\n"
+      javascript_include_tag 'jqgrid/jquery-ui-1.8.custom.min.js',
+        "jqgrid/i18n/grid.locale-#{locale}.js",
+        'jqgrid/jquery.jqGrid.min.js',
+        # Don't know if we need it, if smth not working, just uncomment it
+        #'jqgrid/grid.tbltogrid',
+        'jqgrid/jquery.contextmenu.r2.packed.js', 
+        :cache => 'jqgrid-js'
     end
 
     def jqgrid(title, id, action, columns = [], options = {})
@@ -424,6 +426,8 @@ module Jqgrid
             options << "%s:%s;" % [obj.send(couple[1].second), obj.send(couple[1].third)]
           end
           options.chop! << %Q/",/
+        elsif couple[0] == :dataInit # :dataInit => %@~{$(element).datepicker({onSelect: getDt(dateText, inst); }})}~
+          options << %Q~#{couple[0]}:#{couple[1]},~
         else # :size => 30, :rows => 5, :maxlength => 20, ...
           if couple[1].instance_of?(Fixnum) || couple[1] == 'true' || couple[1] == 'false' || couple[1] == true || couple[1] == false || couple[1] =~ /function/
               options << %Q/#{couple[0]}:#{couple[1]},/
