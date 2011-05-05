@@ -426,10 +426,12 @@ module Jqgrid
             options << "%s:%s;" % [obj.send(couple[1].second), obj.send(couple[1].third)]
           end
           options.chop! << %Q/",/
-        elsif couple[0] == :dataInit # :dataInit => %@~{$(element).datepicker({onSelect: getDt(dateText, inst); }})}~
+        elsif couple[0] == :dataInit # :dataInit => %Q~{$(element).datepicker({onSelect: getDt(dateText, inst); }})}~
           options << %Q~#{couple[0]}:#{couple[1]},~
+        elsif couple[0] == :elmsuffix || couple[0] == :elmpreffix # :elmsuffix => %Q~<a id="companysearch" href="javascript:void(0)"><span id="companysearchicon" class="ui-icon ui-icon-plus" style="position:absolute; top:2px; right:25px;"></span></a>~
+          options << %Q~#{couple[0]}:'#{couple[1]}',~
         else # :size => 30, :rows => 5, :maxlength => 20, ...
-          if couple[1].instance_of?(Fixnum) || couple[1] == 'true' || couple[1] == 'false' || couple[1] == true || couple[1] == false || couple[1] =~ /function/
+          if couple[0] == :elmsuffix || couple[1].instance_of?(Fixnum) || couple[1] == 'true' || couple[1] == 'false' || couple[1] == true || couple[1] == false || couple[1] =~ /function/
               options << %Q/#{couple[0]}:#{couple[1]},/
             else
               options << %Q/#{couple[0]}:"#{couple[1]}",/          
