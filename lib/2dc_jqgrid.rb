@@ -8,12 +8,11 @@ module Jqgrid
 
     def jqgrid_javascripts
       locale = I18n.locale rescue :en
-      javascript_include_tag 'jqgrid/jquery-ui-1.8.custom.min.js',
-        "jqgrid/i18n/grid.locale-#{locale}.js",
+      javascript_include_tag "jqgrid/i18n/grid.locale-#{locale}.js",
         'jqgrid/jquery.jqGrid.min.js',
         # Don't know if we need it, if smth not working, just uncomment it
         #'jqgrid/grid.tbltogrid',
-        'jqgrid/jquery.contextmenu.r2.packed.js', 
+        'jqgrid/jquery.contextmenu.r2.packed.js',
         :cache => 'jqgrid-js'
     end
 
@@ -268,13 +267,13 @@ module Jqgrid
         
         sub_col_names, sub_col_model = gen_columns(options[:subgrid][:columns])
         
-        subgrid = %Q(
+        subgrid = %Q~
         subGridRowExpanded: function(subgrid_id, row_id) {
         		var subgrid_table_id, pager_id;
         		subgrid_table_id = subgrid_id+"_t";
         		pager_id = "p_"+subgrid_table_id;
         		$("#"+subgrid_id).html("<table id='"+subgrid_table_id+"' class='scroll'></table><div id='"+pager_id+"' class='scroll'></div>");
-        		jQuery("#"+subgrid_table_id).jqGrid({
+        		var subgrd = jQuery("#"+subgrid_table_id).jqGrid({
         			url:"#{options[:subgrid][:url]}?q=2&id="+row_id,
               editurl:'#{options[:subgrid][:edit_url]}?parent_id='+row_id,                            
         			datatype: "json",
@@ -294,20 +293,13 @@ module Jqgrid
         		    height: '100%'
         		})
         		.navGrid("#"+pager_id,{edit:#{options[:subgrid][:edit]},add:#{options[:subgrid][:add]},del:#{options[:subgrid][:delete]},search:false})
-        		.navButtonAdd("#"+pager_id,{caption:"Search",title:"Toggle Search",buttonimg:'/images/jqgrid/search.png',
-            	onClickButton:function(){ 
-            		if(jQuery("#t_"+subgrid_table_id).css("display")=="none") {
-            			jQuery("#t_"+subgrid_table_id).css("display","");
-            		} else {
-            			jQuery("#t_"+subgrid_table_id).css("display","none");
-            		}
-            	} 
-            });
-            jQuery("#t_"+subgrid_table_id).height(25).hide().filterGrid(""+subgrid_table_id,{gridModel:true,gridToolbar:true});
+            .navButtonAdd("#"+pager_id,{caption:"",title:$.jgrid.nav.searchtitle, buttonicon :'ui-icon-search', onClickButton:function(){ subgrd[0].toggleToolbar() } })
+            subgrd.filterToolbar();
+            subgrd[0].toggleToolbar();
         	},
         	subGridRowColapsed: function(subgrid_id, row_id) {
         	},
-        )
+        ~
       end
 
       # Generate required Javascript & html to create the jqgrid
