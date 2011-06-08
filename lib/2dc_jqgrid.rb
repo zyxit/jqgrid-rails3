@@ -198,7 +198,7 @@ module Jqgrid
           },
           gridComplete: function(){
             // Hide the select all checkbox if required
-            jQuery("#cb_#{id}").hide();
+            #{options[:hide_select_all] ? "jQuery('#cb_#{id}').hide();" : ''}
             // Get cookie
             var selected_records = new cookieArray("#{id}_selected_records");
             // Check if we have selections
@@ -206,7 +206,6 @@ module Jqgrid
               var grid = jQuery("##{id}");
               // Process and apply selections
               grid_ids = grid.getDataIDs();
-              alert('grid ids: ' + grid_ids + ' cookie ids: ' + selected_records.items());
               $.each(grid.getDataIDs(), function (i, id) {
                 if (selected_records.exists(id)) {
                   grid.setSelection(id, false);
