@@ -13,6 +13,7 @@ module Jqgrid
         # Don't know if we need it, if smth not working, just uncomment it
         #'jqgrid/grid.tbltogrid',
         'jqgrid/jquery.contextmenu.r2.packed.js',
+        'jqgrid/jquery.cookie.js',
         :cache => 'jqgrid-js'
     end
 
@@ -114,6 +115,8 @@ module Jqgrid
       
       # Enable multi-selection (checkboxes)
       multiselect = "multiselect: false,"
+      multiselect_handlers = ''
+      cookie_array = ''
       if options[:multi_selection]
         multiselect = "multiselect: true,"
         multihandler = %Q/
@@ -122,6 +125,96 @@ module Jqgrid
             #{options[:selection_handler]}(s); 
             return false;
           });/
+        # Create object to manage cookie array used to store our selections
+        cookie_array = %Q~
+          var cookieArray = function(cookieName) {
+            // When the cookie is saved the items will be a comma separated string
+            // so we will split the cookie by comma to get the original array
+            // Get the cookie if it exists
+            var cookie = $.cookie(cookieName);
+            // Load the items or a new array if null.
+            var items = cookie ? cookie.split(/,/) : new Array();
+
+            // Return a object that we can use to access the array.
+            return {
+              "add": function(val) {
+                // Add value to the items.
+                items.push(val);
+              },
+              "delete": function(val) {
+                // Remove value from the items.
+                if($.inArray(val, items) > -1) items.splice($.inArray(val, items), 1);
+              },
+              "clear": function() {
+                //clear the cookie.
+                $.cookie(cookieName, null);
+              },
+              "save": function() {
+                // Save the items to a cookie.
+                $.cookie(cookieName, items.join(','));
+              },
+              "exists": function(val) {
+                // Check if value exists in array
+                return ($.inArray(val, items) > -1);
+              },
+              "items": function() {
+                // Get all the items.
+                return items;
+              }
+            }
+          }
+          // Clear cookie if it exists
+          var selected_records = new cookieArray("#{id}_selected_records");
+          selected_records.clear();
+        ~
+        # Create handlers to handle selection
+        multiselect_handlers = %Q~
+          // Handles single record selection
+          onSelectRow: function(id, selected){
+            var selected_records = new cookieArray("#{id}_selected_records");
+            if (selected) {
+              selected_records.add(id);
+            } else {
+              selected_records.delete(id);
+            }
+            // Save the cookie
+            selected_records.save();
+          },
+          // Handle select all
+          onSelectAll: function(ids, selected){
+            var selected_records = new cookieArray("#{id}_selected_records");
+            // Process the ids
+            alert(selected_records.items());
+            $.each(ids, function (i, id) {
+              if (selected) {
+                selected_records.add(id);
+              } else {
+                selected_records.clear();
+              }
+            });
+            // Save the cookie
+            selected_records.save();
+            alert(selected_records.items());
+          },
+          gridComplete: function(){
+            // Hide the select all checkbox if required
+            jQuery("#cb_#{id}").hide();
+            // Get cookie
+            var selected_records = new cookieArray("#{id}_selected_records");
+            // Check if we have selections
+            if (selected_records.items().length > 0) {
+              var grid = jQuery("##{id}");
+              // Process and apply selections
+              grid_ids = grid.getDataIDs();
+              alert('grid ids: ' + grid_ids + ' cookie ids: ' + selected_records.items());
+              $.each(grid.getDataIDs(), function (i, id) {
+                if (selected_records.exists(id)) {
+                  grid.setSelection(id, false);
+                }
+              });
+            }
+          },
+        ~
       end
 
       # Enable master-details
@@ -306,6 +399,7 @@ module Jqgrid
       %Q(
         <script type="text/javascript">
           #{error_handler_code}
+          #{cookie_array}
           var lastsel;
           #{'jQuery(document).ready(function(){' unless options[:omit_ready]=='true'}
           var mygrid = jQuery("##{id}").jqGrid({
@@ -332,6 +426,7 @@ module Jqgrid
               hidegrid: #{options[:hidegrid]}, 
               shrinkToFit: #{options[:shrinkToFit]}, 
               #{multiselect}
+              #{multiselect_handlers}
               #{masterdetails}
               #{grid_loaded}
               #{direct_link}
