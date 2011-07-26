@@ -562,11 +562,6 @@ module Jqgrid
       options.chop! << "}"
     end
 
-    # Get custom button options, i.e. caption, buttonicon, etc.
-    def get_custom_button_options(options)
-
-    end
-
 end
 
 
