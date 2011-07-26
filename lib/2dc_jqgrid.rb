@@ -55,7 +55,8 @@ module Jqgrid
           :loadui              => 'enable',
           :context_menu        => {:menu_bindings => nil, :menu_id => nil},
           # Recreate the edit/add dialogs by default do not cache
-          :recreateForm        => 'true'
+          :recreateForm        => 'true',
+          :customButtons       => []
         }.merge(options)
       
       # Stringify options values
@@ -108,10 +109,43 @@ module Jqgrid
         filter_toolbar = "mygrid.filterToolbar();"
         filter_toolbar << "mygrid[0].toggleToolbar()"
       end
+
+      # Check if we need to add any custom buttons,
+      # see http://www.trirand.com/jqgridwiki/doku.php?id=wiki:custom_buttons
+      # customButtons should be an array of hashes describing providing the required options for each button, e.g.
+      # To add a separator include the separator option with either 'before' or 'after' as the values
+      # [{:caption => '', :title => 'Merge', :buttonicon => 'ui-icon-add', :onClickButton => %Q/ function(){ alert("Adding Row");} /, :position => 'last', :separator => 'before'}]
+      custom_buttons = ''
+      if options[:customButtons].size > 0 && options[:customButtons].is_a?(Array)
+        options[:customButtons].each do |button|
+          if button.is_a?(Hash)
+            # Check for separator before button
+            if button.has_key?(:separator) && button[:separator] == 'before'
+              custom_buttons += %Q~.navSeparatorAdd("##{id}_pager")~
+            end
+            custom_buttons += %Q~.navButtonAdd("##{id}_pager",{~
+            button_options = ''
+            button.each do |key, value|
+              if key != :separator
+                button_options += ',' unless button_options.blank?
+                if key == :onClickButton
+                  button_options += %Q~#{key.to_s}:#{value}~
+                else
+                  button_options += %Q~#{key.to_s}:'#{value}'~
+                end
+              end
+            end
+            custom_buttons += "#{button_options}})"
+            # Check for separator after button
+            if button.has_key?(:separator) && button[:separator] == 'after'
+              custom_buttons += %Q~.navSeparatorAdd("##{id}_pager")~
+            end
+          end
+        end
+      end
      
       # Enable sortableRows
       sortableRows=""
-      
       
       # Enable multi-selection (checkboxes)
       multiselect = "multiselect: false,"
@@ -445,6 +479,7 @@ module Jqgrid
               {closeOnEscape:true,modal:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'delete');}}
             )
             #{search}
+            #{custom_buttons}
             #{multihandler}
             #{selection_link}
             #{filter_toolbar}
@@ -525,7 +560,13 @@ module Jqgrid
         end
       end
       options.chop! << "}"
-    end 
+    end
+
+    # Get custom button options, i.e. caption, buttonicon, etc.
+    def get_custom_button_options(options)
+
+    end
+
 end
 
 
