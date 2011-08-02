@@ -124,7 +124,7 @@ module Jqgrid
 
       # Check if we need to add any custom buttons,
       # see http://www.trirand.com/jqgridwiki/doku.php?id=wiki:custom_buttons
-      # customButtons should be an array of hashes describing providing the required options for each button, e.g.
+      # customButtons should be an array of hashes providing the required options for each button, e.g.
       # To add a separator include the separator option with either 'before' or 'after' as the values
       # [{:caption => '', :title => 'Merge', :buttonicon => 'ui-icon-add', :onClickButton => %Q/ function(){ alert("Adding Row");} /, :position => 'last', :separator => 'before'}]
       custom_buttons = ''
@@ -262,27 +262,63 @@ module Jqgrid
         ~
       end
 
-      # Enable master-details
+      # Enable master-details, kept for backward compatability, if you want a single or
+      # multiple detail grids linked to a master use options[:master_detail_grids]
       masterdetails = ""
       if options[:master_details]
         masterdetails = %Q/
-          onSelectRow: function(ids) { 
-            if(ids == null) { 
-              ids=0; 
-              if(jQuery("##{id}_details").getGridParam('records') >0 ) 
-              { 
+          onSelectRow: function(ids) {
+            if(ids == null) {
+              ids=0;
+              if(jQuery("##{id}_details").getGridParam('records') >0 )
+              {
                 jQuery("##{id}_details").setGridParam({url:"#{options[:details_url]}?q=1&id="+ids,page:1})
                 .setCaption("#{options[:details_caption]}: "+ids)
-                .trigger('reloadGrid'); 
-              } 
-            } 
-            else 
-            { 
+                .trigger('reloadGrid');
+              }
+            }
+            else
+            {
               jQuery("##{id}_details").setGridParam({url:"#{options[:details_url]}?q=1&id="+ids,page:1})
               .setCaption("#{options[:details_caption]} : "+ids)
-              .trigger('reloadGrid'); 
-            } 
+              .trigger('reloadGrid');
+            }
           },/
+      end
+
+      # Enable master-details, using this option you can specify any number of detail grids to be linked
+      # to a master. To do so you need to use an array of hashes to describe the relationships.
+      # For example:
+      # :master_detail_grids => [{:grid_id => "timesheet_detail_grid",
+      #  :details_url => placement_timesheet_detail_index_path(@placement),
+      #  :caption => 'Payroll Detail', :caption_field => 'candidate_code'},
+      #  {:grid_id => "timesheet_daily_grid",
+      #  :details_url => placement_timesheet_daily_index_path(@placement),
+      #  :caption => 'Daily Time/Hours', :caption_field => 'candidate_code'}],
+      #
+      # This will setup two grids that will be linked to the master.
+      masterdetailgrids = ""
+      if options[:master_details_grids] && options[:master_details_grids].size > 0 && options[:master_details_grids].is_a?(Array)
+        grid_methods = ""
+        options[:master_details_grids].each do |grid|
+          if grid.is_a?(Hash)
+            grid_methods += %Q~
+              caption_value = $('##{id}').jqGrid('getCell', ids, '#{grid[:caption_field]}');
+              jQuery("##{grid[:grid_id]}").setGridParam({url:"#{grid[:details_url]}?q=1&id="+ids,page:1})
+                .setCaption("#{grid[:caption]}: "+caption_value)
+                .trigger('reloadGrid');
+              ~
+          end
+        end
+        unless grid_methods.blank?
+          masterdetailgrids = %Q~
+            onSelectRow: function(ids) {
+              var caption_value;
+              if(ids != null) {
+                #{grid_methods}
+              }
+            },~
+        end
       end
 
       # Enable selection link, button
@@ -459,7 +495,7 @@ module Jqgrid
               rowList:#{options[:rowlist]},
               imgpath: '/images/jqgrid',
               viewrecords:#{options[:viewrecords]},
-              height: #{options[:height]},
+              height: '#{options[:height]}',
               #{"sortname: '#{options[:sort_column]}'," unless options[:sort_column].blank?}
               #{"sortorder: '#{options[:sort_order]}'," unless options[:sort_order].blank?}
               gridview: #{options[:gridview]},
@@ -473,6 +509,7 @@ module Jqgrid
               #{multiselect}
               #{multiselect_handlers}
               #{masterdetails}
+              #{masterdetailgrids}
               #{grid_loaded}
               #{direct_link}
               #{editable}
