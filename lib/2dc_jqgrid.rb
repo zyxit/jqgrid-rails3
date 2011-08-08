@@ -406,7 +406,8 @@ module Jqgrid
             :search        => 'false',
             :viewrecords   => 'true',
             :rowlist       => '[10,25,50,100]',
-            :shrinkToFit   => 'false'
+            :shrinkToFit   => 'false',
+            :context_menu  => {:menu_bindings => nil, :menu_id => nil},
           }.merge(options[:subgrid])
 
         # Stringify options values
@@ -438,7 +439,20 @@ module Jqgrid
           },
           /
         end     
-        
+
+        # Context menu
+        # See http://www.trendskitchens.co.nz/jquery/contextmenu/
+        # http://www.hard-bit.net/files/jqGrid-3.5/ContextMenu.html
+        # http://www.hard-bit.net/blog/?p=171
+        #
+        subgrid_context_menu = ""
+        if options[:subgrid][:context_menu].size > 0 && !options[:subgrid][:context_menu][:menu_id].blank?
+          subgrid_context_menu = %Q/
+          afterInsertRow: function(rowid, rowdata, rowelem){
+            $('#' + rowid).contextMenu('#{options[:subgrid][:context_menu][:menu_id]}', #{options[:subgrid][:context_menu][:menu_bindings]});
+          },/
+        end
+
         sub_col_names, sub_col_model = gen_columns(options[:subgrid][:columns])
         
         subgrid = %Q~
@@ -464,6 +478,7 @@ module Jqgrid
                 toolbar : [true,"top"], 
         		    #{subgrid_inline_edit}
         		    #{subgrid_direct_link}
+                #{subgrid_context_menu}
         		    height: '100%'
         		})
         		.navGrid("#"+pager_id,{edit:#{options[:subgrid][:edit]},add:#{options[:subgrid][:add]},del:#{options[:subgrid][:delete]},search:false})
