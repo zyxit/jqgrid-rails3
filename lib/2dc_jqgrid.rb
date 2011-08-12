@@ -665,19 +665,26 @@ module JqgridJson
         json.chop! << "]},"
       end
       json.chop! << "]"
-      if user_data
-        json << %Q(,"userdata":{)
-        user_data.each { |k, v| json << %Q("#{k}":"#{v}",) }
-        json.chop! << "}"
-      end
+      json << user_data_json(user_data)
       json << "}"
     else
+      json << user_data_json(user_data)
       json << "}"
     end
     json
   end
   
   private
+
+  def user_data_json(user_data)
+    json = ''
+    if user_data
+      json << %Q(,"userdata":{)
+      user_data.each { |k, v| json << %Q("#{k}":"#{v}",) }
+      json.chop! << "}"
+    end
+    json
+  end
     
   def escape_json(json)
     if json
