@@ -51,6 +51,8 @@ module Jqgrid
           :hiddengrid          => 'false',
           :hidegrid            => 'false',
           :shrinkToFit         => 'true',
+          :footerrow           => 'false',
+          :userDataOnFooter    => 'false',
           :form_width          => 300,
           :loadui              => 'enable',
           :context_menu        => {:menu_bindings => nil, :menu_id => nil},
@@ -296,6 +298,8 @@ module Jqgrid
       #  :details_url => placement_timesheet_daily_index_path(@placement),
       #  :caption => 'Daily Time/Hours', :caption_field => 'candidate_code'}],
       #
+      # You can also specify and edit url via the :edit_url parameter
+      #
       # This will setup two grids that will be linked to the master.
       masterdetailgrids = ""
       if options[:master_details_grids] && options[:master_details_grids].size > 0 && options[:master_details_grids].is_a?(Array)
@@ -308,6 +312,11 @@ module Jqgrid
                 .setCaption("#{grid[:caption]}: "+caption_value)
                 .trigger('reloadGrid');
               ~
+            if grid.has_key?(:edit_url)
+              grid_methods += %Q~
+                jQuery("##{grid[:grid_id]}").setGridParam({editurl:"#{grid[:edit_url]}?parent_id="+ids});
+                ~
+            end
           end
         end
         unless grid_methods.blank?
@@ -521,6 +530,8 @@ module Jqgrid
               hiddengrid: #{options[:hiddengrid]},
               hidegrid: #{options[:hidegrid]}, 
               shrinkToFit: #{options[:shrinkToFit]}, 
+              footerrow: #{options[:footerrow]},
+              userDataOnFooter: #{options[:userDataOnFooter]},
               #{multiselect}
               #{multiselect_handlers}
               #{masterdetails}
@@ -638,7 +649,7 @@ module JqgridJson
     "\r"    => '\n',
     '"'     => '\\"' }
   
-  def to_jqgrid_json(attributes, current_page, per_page, total)
+  def to_jqgrid_json(attributes, current_page, per_page, total, user_data=nil)
     json = %Q({"page":"#{current_page}","total":#{total/per_page.to_i+1},"records":"#{total}")
     if total > 0
       json << %Q(,"rows":[)
@@ -653,10 +664,17 @@ module JqgridJson
         end
         json.chop! << "]},"
       end
-      json.chop! << "]}"
+      json.chop! << "]"
+      if user_data
+        json << %Q(,"userdata":{)
+        user_data.each { |k, v| json << %Q("#{k}":"#{v}",) }
+        json.chop! << "}"
+      end
+      json << "}"
     else
       json << "}"
     end
+    json
   end
   
   private
