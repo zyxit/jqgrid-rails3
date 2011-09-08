@@ -53,6 +53,9 @@ module Jqgrid
           :shrinkToFit         => 'true',
           :footerrow           => 'false',
           :userDataOnFooter    => 'false',
+          :loadonce            => 'false',
+          :cellsubmit          => 'remote',
+          :cellEdit            => 'false',
           :form_width          => 300,
           :loadui              => 'enable',
           :context_menu        => {:menu_bindings => nil, :menu_id => nil},
@@ -60,7 +63,8 @@ module Jqgrid
           :recreateForm        => 'true',
           :customButtons       => [],
           :before_show_form_edit => 'null',
-          :before_show_form_add  => 'null'
+          :before_show_form_add  => 'null',
+          :group_by            => 'null'
         }.merge(options)
       
       # Stringify options values
@@ -79,6 +83,52 @@ module Jqgrid
       if options[:before_show_form_add] == 'null'
         # If no error handlers return true
         options[:before_show_form_add] = 'true;'
+      end
+
+      # Enable beforeRequest callback
+      # Before requesting data, call the Javascript function options[:before_request] (defined by the user)
+      before_request = ""
+      if options[:before_request].present?
+        before_request = %Q/
+        beforeRequest: function(){
+          #{options[:before_request]}();
+        },
+        /
+      end
+
+      # Enable gridComplete callback
+      # When grid completely loaded, call the Javascript function options[:grid_complete] (defined by the user)
+      grid_complete = ""
+      if options[:grid_complete].present?
+        grid_complete = %Q/
+        gridComplete: function(){
+          #{options[:grid_complete]}();
+        },
+        /
+      end
+
+      # Enable grid_loaded callback
+      # When data are loaded into the grid, call the Javascript function options[:grid_loaded] (defined by the user)
+      grid_loaded = ""
+      if options[:grid_loaded].present?
+        grid_loaded = %Q/
+        loadComplete: function(){
+          #{options[:grid_loaded]}();
+        },
+        /
+      end
+
+      # Check for grouping
+      grouping = ''
+      grouping_view = ''
+      if options[:group_by] != 'null'
+        grouping = 'grouping: true,'
+        grouping_view = %Q~
+          groupingView: {
+            groupField: ['#{options[:group_by]}'],
+            groupDataSorted: true
+          },
+        ~
       end
 
       # Setup error handler if required
@@ -189,7 +239,7 @@ module Jqgrid
                 // Add value to the items.
                 items.push(val);
               },
-              "delete": function(val) {
+              "del": function(val) {
                 // Remove value from the items.
                 if($.inArray(val, items) > -1) items.splice($.inArray(val, items), 1);
               },
@@ -214,35 +264,48 @@ module Jqgrid
           // Clear cookie if it exists
           var selected_records = new cookieArray("#{id}_selected_records");
           selected_records.clear();
+          // Create another cookie to track those records unselected
+          var unselected_records = new cookieArray("#{id}_unselected_records");
+          unselected_records.clear();
         ~
         # Create handlers to handle selection
         multiselect_handlers = %Q~
           // Handles single record selection
           onSelectRow: function(id, selected){
             var selected_records = new cookieArray("#{id}_selected_records");
+            var unselected_records = new cookieArray("#{id}_unselected_records");
+            //alert(selected_records.items());
             if (selected) {
               selected_records.add(id);
+              unselected_records.del(id);
             } else {
-              selected_records.delete(id);
+              selected_records.del(id);
+              unselected_records.add(id);
             }
             // Save the cookie
             selected_records.save();
+            unselected_records.save();
+            //alert(selected_records.items());
           },
           // Handle select all
           onSelectAll: function(ids, selected){
             var selected_records = new cookieArray("#{id}_selected_records");
+            var unselected_records = new cookieArray("#{id}_unselected_records");
             // Process the ids
-            alert(selected_records.items());
+            //alert(selected_records.items());
             $.each(ids, function (i, id) {
               if (selected) {
                 selected_records.add(id);
+                unselected_records.del(id);
               } else {
-                selected_records.clear();
+                selected_records.del(id);
+                unselected_records.add(id);
               }
             });
             // Save the cookie
             selected_records.save();
-            alert(selected_records.items());
+            unselected_records.save();
+            //alert(selected_records.items());
           },
           gridComplete: function(){
             // Hide the select all checkbox if required
@@ -260,8 +323,10 @@ module Jqgrid
                 }
               });
             }
+            #{options[:grid_complete].present? ? "#{options[:grid_complete]}();" : ''}
           },
         ~
+        grid_complete = ''
       end
 
       # Enable master-details, kept for backward compatability, if you want a single or
@@ -309,8 +374,8 @@ module Jqgrid
             grid_methods += %Q~
               caption_value = $('##{id}').jqGrid('getCell', ids, '#{grid[:caption_field]}');
               jQuery("##{grid[:grid_id]}").setGridParam({url:"#{grid[:details_url]}?q=1&id="+ids,page:1})
-                .setCaption("#{grid[:caption]}: "+caption_value)
-                .trigger('reloadGrid');
+                .setCaption("#{grid[:caption]}: "+caption_value);
+              jQuery("##{grid[:grid_id]}").trigger('reloadGrid');
               ~
             if grid.has_key?(:edit_url)
               grid_methods += %Q~
@@ -322,10 +387,9 @@ module Jqgrid
         unless grid_methods.blank?
           masterdetailgrids = %Q~
             onSelectRow: function(ids) {
+              if (ids == null) ids = 0;
               var caption_value;
-              if(ids != null) {
-                #{grid_methods}
-              }
+              #{grid_methods}
             },~
         end
       end
@@ -358,31 +422,20 @@ module Jqgrid
         },/
       end
 
-      # Enable grid_loaded callback
-      # When data are loaded into the grid, call the Javascript function options[:grid_loaded] (defined by the user)
-      grid_loaded = ""
-      if options[:grid_loaded].present?
-        grid_loaded = %Q/
-        loadComplete: function(){ 
-          #{options[:grid_loaded]}();
-        },
-        /
-      end
-
       # Enable inline editing
       # When a row is selected, all fields are transformed to input types
       editable = ""
-      if options[:edit] && options[:inline_edit] == 'true'
+      if options[:edit].to_s == 'true' && options[:inline_edit].to_s == 'true'
         editable = %Q/
-        onSelectRow: function(id){ 
-          if(id && id!==lastsel){ 
+        onSelectRow: function(id){
+          if(id && id!==lastsel){
             jQuery('##{id}').restoreRow(lastsel);
             jQuery('##{id}').editRow(id, true, #{options[:inline_edit_handler]}, #{error_handler_name});
-            lastsel=id; 
-          } 
+            lastsel=id;
+          }
         },/
       end
-      
+
       # Context menu
       # See http://www.trendskitchens.co.nz/jquery/contextmenu/
       # http://www.hard-bit.net/files/jqGrid-3.5/ContextMenu.html
@@ -531,12 +584,19 @@ module Jqgrid
               hidegrid: #{options[:hidegrid]}, 
               shrinkToFit: #{options[:shrinkToFit]}, 
               footerrow: #{options[:footerrow]},
+              loadonce: #{options[:loadonce]},
+              cellsubmit: '#{options[:cellsubmit]}',
+              cellEdit: '#{options[:cellEdit]}',
               userDataOnFooter: #{options[:userDataOnFooter]},
+              #{grouping}
+              #{grouping_view}
               #{multiselect}
               #{multiselect_handlers}
               #{masterdetails}
               #{masterdetailgrids}
               #{grid_loaded}
+              #{before_request}
+              #{grid_complete}
               #{direct_link}
               #{editable}
               #{context_menu}
@@ -622,7 +682,7 @@ module Jqgrid
             options << "%s:%s;" % [obj.send(couple[1].second), obj.send(couple[1].third)]
           end
           options.chop! << %Q/",/
-        elsif couple[0] == :dataInit # :dataInit => %Q~{$(element).datepicker({onSelect: getDt(dateText, inst); }})}~
+        elsif couple[0] == :dataInit || couple[0] == :custom_func # :dataInit => %Q~{$(element).datepicker({onSelect: getDt(dateText, inst); }})}~
           options << %Q~#{couple[0]}:#{couple[1]},~
         elsif couple[0] == :elmsuffix || couple[0] == :elmpreffix # :elmsuffix => %Q~<a id="companysearch" href="javascript:void(0)"><span id="companysearchicon" class="ui-icon ui-icon-plus" style="position:absolute; top:2px; right:25px;"></span></a>~
           options << %Q~#{couple[0]}:'#{couple[1]}',~
