@@ -16,9 +16,13 @@ Following features are supported :
 
 = Install and Uninstall 
 Download plugin from github using:
+
 git clone https:// "name of fork you want to use"
+
 Unzip and copy to the vendor/plugins directory of your rails app
+
 Then to install and uninstall type:
+
 
   $ rake jqgrid:install
   
