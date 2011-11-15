@@ -269,24 +269,24 @@ module Jqgrid
           unselected_records.clear();
         ~
         # Create handlers to handle selection
-        multiselect_handlers = %Q~
+        multiselect_onselectrow = %Q~
           // Handles single record selection
-          onSelectRow: function(id, selected){
-            var selected_records = new cookieArray("#{id}_selected_records");
-            var unselected_records = new cookieArray("#{id}_unselected_records");
-            //alert(selected_records.items());
-            if (selected) {
-              selected_records.add(id);
-              unselected_records.del(id);
-            } else {
-              selected_records.del(id);
-              unselected_records.add(id);
-            }
-            // Save the cookie
-            selected_records.save();
-            unselected_records.save();
-            //alert(selected_records.items());
-          },
+          var selected_records = new cookieArray("#{id}_selected_records");
+          var unselected_records = new cookieArray("#{id}_unselected_records");
+          //alert(selected_records.items());
+          if (selected) {
+            selected_records.add(ids);
+            unselected_records.del(ids);
+          } else {
+            selected_records.del(ids);
+            unselected_records.add(ids);
+          }
+          // Save the cookie
+          selected_records.save();
+          unselected_records.save();
+          //alert(selected_records.items());
+        ~
+        multiselect_handlers = %Q~
           // Handle select all
           onSelectAll: function(ids, selected){
             var selected_records = new cookieArray("#{id}_selected_records");
@@ -333,24 +333,23 @@ module Jqgrid
       # multiple detail grids linked to a master use options[:master_detail_grids]
       masterdetails = ""
       if options[:master_details]
-        masterdetails = %Q/
-          onSelectRow: function(ids) {
-            if(ids == null) {
-              ids=0;
-              if(jQuery("##{id}_details").getGridParam('records') >0 )
-              {
-                jQuery("##{id}_details").setGridParam({url:"#{options[:details_url]}?q=1&id="+ids,page:1})
-                .setCaption("#{options[:details_caption]}: "+ids)
-                .trigger('reloadGrid');
-              }
-            }
-            else
+        masterdetails = %Q~
+          if(ids == null) {
+            ids=0;
+            if(jQuery("##{id}_details").getGridParam('records') >0 )
             {
               jQuery("##{id}_details").setGridParam({url:"#{options[:details_url]}?q=1&id="+ids,page:1})
-              .setCaption("#{options[:details_caption]} : "+ids)
+              .setCaption("#{options[:details_caption]}: "+ids)
               .trigger('reloadGrid');
             }
-          },/
+          }
+          else
+          {
+            jQuery("##{id}_details").setGridParam({url:"#{options[:details_url]}?q=1&id="+ids,page:1})
+            .setCaption("#{options[:details_caption]} : "+ids)
+            .trigger('reloadGrid');
+          }
+        ~
       end
 
       # Enable master-details, using this option you can specify any number of detail grids to be linked
@@ -386,11 +385,10 @@ module Jqgrid
         end
         unless grid_methods.blank?
           masterdetailgrids = %Q~
-            onSelectRow: function(ids) {
-              if (ids == null) ids = 0;
-              var caption_value;
-              #{grid_methods}
-            },~
+            if (ids == null) ids = 0;
+            var caption_value;
+            #{grid_methods}
+          ~
         end
       end
 
@@ -410,31 +408,40 @@ module Jqgrid
         });/
       end
 
-      # Enable direct selection (when a row in the table is clicked)
-      # The javascript function created by the user (options[:selection_handler]) will be called with the selected row id as a parameter
-      direct_link = ""
-      if options[:direct_selection] && options[:selection_handler].present? && options[:multi_selection].blank?
-        direct_link = %Q/
-        onSelectRow: function(id){ 
-          if(id){ 
-            #{options[:selection_handler]}(id); 
-          } 
-        },/
-      end
-
       # Enable inline editing
       # When a row is selected, all fields are transformed to input types
       editable = ""
       if options[:edit].to_s == 'true' && options[:inline_edit].to_s == 'true'
         editable = %Q/
-        onSelectRow: function(id){
-          if(id && id!==lastsel){
+          if(ids && ids!==lastsel){
             jQuery('##{id}').restoreRow(lastsel);
-            jQuery('##{id}').editRow(id, true, #{options[:inline_edit_handler]}, #{error_handler_name});
-            lastsel=id;
+            jQuery('##{id}').editRow(ids, true, #{options[:inline_edit_handler]}, #{error_handler_name});
+            lastsel=ids;
           }
-        },/
+        /
       end
+
+      # Enable direct selection (when a row in the table is clicked)
+      # The javascript function created by the user (options[:selection_handler]) will be called with the selected row id as a parameter
+      direct_link = ""
+      if options[:direct_selection] && options[:selection_handler].present?
+        direct_link = %Q/
+          if(ids){
+            #{options[:selection_handler]}(ids);
+          }
+        /
+      end
+
+      # As there may be multiple options requiring the use of the onSelectRow event, we need to include them all
+      onselectrow = %Q~
+        onSelectRow: function(ids, selected){
+          #{multiselect_onselectrow}
+          #{masterdetails}
+          #{masterdetailgrids}
+          #{editable}
+          #{direct_link}
+        },
+      ~
 
       # Context menu
       # See http://www.trendskitchens.co.nz/jquery/contextmenu/
@@ -586,19 +593,16 @@ module Jqgrid
               footerrow: #{options[:footerrow]},
               loadonce: #{options[:loadonce]},
               cellsubmit: '#{options[:cellsubmit]}',
-              cellEdit: '#{options[:cellEdit]}',
+              cellEdit: #{options[:cellEdit]},
               userDataOnFooter: #{options[:userDataOnFooter]},
               #{grouping}
               #{grouping_view}
               #{multiselect}
               #{multiselect_handlers}
-              #{masterdetails}
-              #{masterdetailgrids}
+              #{onselectrow}
               #{grid_loaded}
               #{before_request}
               #{grid_complete}
-              #{direct_link}
-              #{editable}
               #{context_menu}
               #{subgrid_enabled}
               #{subgrid}
@@ -607,9 +611,10 @@ module Jqgrid
             .navGrid('##{id}_pager',
               {edit:#{edit_button},add:#{options[:add]},del:#{options[:delete]},view:#{options[:view]},search:false,refresh:true},
               // Edit options
-              {closeOnEscape:true,modal:true,recreateForm:#{options[:recreateForm]},width:#{options[:form_width]},closeAfterEdit:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'edit');},beforeShowForm:function(form){return #{options[:before_show_form_edit]}(form);}},
+              // *** Set edit & add forms modal to false, if true then it causes all sorts of problems with datepicker and other issues ***
+              {closeOnEscape:true,modal:false,recreateForm:#{options[:recreateForm]},width:#{options[:form_width]},closeAfterEdit:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'edit');},beforeShowForm:function(form){return #{options[:before_show_form_edit]}(form);}},
               // Add options
-              {closeOnEscape:true,modal:true,recreateForm:#{options[:recreateForm]},width:#{options[:form_width]},closeAfterAdd:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'add');},beforeShowForm:function(form){return #{options[:before_show_form_add]}(form);}},
+              {closeOnEscape:true,modal:false,recreateForm:#{options[:recreateForm]},width:#{options[:form_width]},closeAfterAdd:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'add');},beforeShowForm:function(form){return #{options[:before_show_form_add]}(form);}},
               // Delete options
               {closeOnEscape:true,modal:true,afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'delete');}}
             )
@@ -682,7 +687,7 @@ module Jqgrid
             options << "%s:%s;" % [obj.send(couple[1].second), obj.send(couple[1].third)]
           end
           options.chop! << %Q/",/
-        elsif couple[0] == :dataInit || couple[0] == :custom_func # :dataInit => %Q~{$(element).datepicker({onSelect: getDt(dateText, inst); }})}~
+        elsif couple[0] == :dataEvents || couple[0] == :dataInit || couple[0] == :custom_func # :dataInit => %Q~{$(element).datepicker({onSelect: getDt(dateText, inst); }})}~
           options << %Q~#{couple[0]}:#{couple[1]},~
         elsif couple[0] == :elmsuffix || couple[0] == :elmpreffix # :elmsuffix => %Q~<a id="companysearch" href="javascript:void(0)"><span id="companysearchicon" class="ui-icon ui-icon-plus" style="position:absolute; top:2px; right:25px;"></span></a>~
           options << %Q~#{couple[0]}:'#{couple[1]}',~
@@ -701,14 +706,7 @@ end
 
 
 module JqgridJson
-  JSON_ESCAPE_MAP = {
-    '\\'    => '\\\\',
-    '</'    => '<\/',
-    "\r\n"  => '\n',
-    "\n"    => '\n',
-    "\r"    => '\n',
-    '"'     => '\\"' }
-  
+
   def to_jqgrid_json(attributes, current_page, per_page, total, user_data=nil)
     json = %Q({"page":"#{current_page}","total":#{total/per_page.to_i+1},"records":"#{total}")
     if total > 0
@@ -719,8 +717,12 @@ module JqgridJson
         couples = elem.attributes.symbolize_keys
         attributes.each do |atr|
           value = get_atr_value(elem, atr, couples)
-          value = escape_json(value) if value and value.is_a? String
-          json << %Q("#{value}",)
+          if value and value.is_a? String
+            value = escape_json(value)
+            json << %Q(#{value},)
+          else
+            json << %Q("#{value}",)
+          end
         end
         json.chop! << "]},"
       end
@@ -748,7 +750,7 @@ module JqgridJson
     
   def escape_json(json)
     if json
-      json.gsub(/(\\|<\/|\r\n|[\n\r"])/) { JSON_ESCAPE_MAP[$1] }
+      json.to_json
     else
       ''
     end

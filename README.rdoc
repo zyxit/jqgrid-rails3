@@ -1,5 +1,12 @@
 = a plugin base on 2dcJqgrid for rails3 to use jqgrid
 
+Now supports jqgrid V4
+
+Please note:
+The latest version has changed the modal setting for the edit/add forms to be false rather than true. The reason
+for this is when modal is true then it causes all sorts of problems with datepicker when the datepicker field
+is the first field. If this is not desirable for you fork the project and change as required.
+
 This Rails plugin allows you to add jQuery datagrids into your applications.
 
 Following features are supported :
@@ -15,15 +22,7 @@ Following features are supported :
 - And more ...
 
 = Install and Uninstall 
-Download plugin from github using:
-
-git clone https:// "name of fork you want to use"
-
-Unzip and copy to the vendor/plugins directory of your rails app
-
-Then to install and uninstall type:
-
-
+  
   $ rake jqgrid:install
   
   $ rake jqgrid:uninstall
